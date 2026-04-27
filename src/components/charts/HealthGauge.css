@@ -1,0 +1,17 @@
+.gauge-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px 0;
+}
+
+.gauge-arc-fill {
+  transition: stroke-dasharray 1.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gauge-score-value {
+  transition: fill 0.4s ease;
+}
