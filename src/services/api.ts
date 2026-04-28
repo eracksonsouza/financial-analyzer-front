@@ -1,75 +1,53 @@
-const BASE = import.meta.env.VITE_API_URL || ''
+import { request } from './http'
+import type {
+  AnalysisCreateResponseDTO,
+  AnalysisShowResponseDTO,
+  CreateTransactionDTO,
+  ExpensesDTO,
+  HistoryItemDTO,
+  TransactionDTO,
+} from './types'
 
-export interface Expenses {
-  moradia: number
-  alimentacao: number
-  transporte: number
-  saude: number
-  lazer: number
-  educacao: number
-  dividas: number
-  outros: number
-}
+export type {
+  AnalysisCreateResponseDTO,
+  AnalysisShowResponseDTO,
+  CreateTransactionDTO,
+  ExpensesDTO,
+  HistoryItemDTO,
+  TransactionDTO,
+  MetricsDTO,
+  AiResultDTO,
+} from './types'
 
-export interface Metrics {
-  income: number
-  total_expenses: number
-  balance: number
-  savings_rate: number
-  health_score: number
-  expense_ratios: Record<string, number>
-  rule_50_30_20: {
-    needs_pct: number
-    wants_pct: number
-    debt_pct: number
-  }
-}
+// Aliases para compatibilidade com imports existentes no app
+export type Expenses = ExpensesDTO
+export type HistoryItem = HistoryItemDTO
+export type Metrics = import('./types').MetricsDTO
+export type AnalysisResponse = AnalysisCreateResponseDTO | AnalysisShowResponseDTO
 
-export interface AiResult {
-  diagnostico: string
-  melhorias: string[]
-  score_label: string
-}
-
-export interface AnalysisResponse {
-  id: number
-  metrics: Metrics
-  ai: AiResult
-}
-
-export interface HistoryItem {
-  id: number
-  income: number
-  metrics: Metrics
-  created_at: string
-}
-
-export async function postAnalysis(
-  income: number,
-  expenses: Expenses
-): Promise<AnalysisResponse> {
-  const res = await fetch(`${BASE}/api/analysis`, {
+export async function postAnalysis(income: number, expenses: ExpensesDTO): Promise<AnalysisCreateResponseDTO> {
+  return request<AnalysisCreateResponseDTO>('/api/analysis', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ income, expenses }),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || `HTTP ${res.status}`)
-  }
-
-  return res.json()
 }
 
-export async function getHistory(): Promise<HistoryItem[]> {
-  const res = await fetch(`${BASE}/api/analysis/history`)
-  if (!res.ok) throw new Error('Erro ao carregar histórico')
-  return res.json()
+export async function getHistory(): Promise<HistoryItemDTO[]> {
+  return request<HistoryItemDTO[]>('/api/analysis/history')
 }
 
-export async function getAnalysis(id: number): Promise<AnalysisResponse & { expenses: Expenses }> {
-  const res = await fetch(`${BASE}/api/analysis/${id}`)
-  if (!res.ok) throw new Error('Não encontrado')
-  return res.json()
+export async function getAnalysis(id: number): Promise<AnalysisShowResponseDTO> {
+  return request<AnalysisShowResponseDTO>(`/api/analysis/${id}`)
+}
+
+export async function listTransactions(month?: string): Promise<TransactionDTO[]> {
+  const query = month ? `?month=${encodeURIComponent(month)}` : ''
+  return request<TransactionDTO[]>(`/api/transactions${query}`)
+}
+
+export async function createTransaction(input: CreateTransactionDTO): Promise<TransactionDTO> {
+  return request<TransactionDTO>('/api/transactions', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
 }

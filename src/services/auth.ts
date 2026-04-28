@@ -5,6 +5,10 @@ export interface UserProfile {
 
 const TOKEN_KEYS = ['auth_token', 'jwt', 'token']
 
+export function getAuthToken(): string | null {
+  return TOKEN_KEYS.map((key) => localStorage.getItem(key)).find(Boolean) ?? null
+}
+
 function decodePayload(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
   if (parts.length < 2) return null
@@ -25,7 +29,7 @@ function decodePayload(token: string): Record<string, unknown> | null {
 }
 
 export function getUserProfile(): UserProfile | null {
-  const token = TOKEN_KEYS.map((key) => localStorage.getItem(key)).find(Boolean)
+  const token = getAuthToken()
   if (!token) return null
 
   const payload = decodePayload(token)
