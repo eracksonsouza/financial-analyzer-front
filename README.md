@@ -15,6 +15,7 @@
 
 ### 🤖 Converse com seu assistente financeiro
 Um chatbot de IA flutuante disponível em qualquer tela. Pergunte como economizar mais, como montar uma reserva de emergência ou o que fazer com suas dívidas — e receba orientações na hora, sem sair da página.
+<img width="531" height="780" alt="Image" src="https://github.com/user-attachments/assets/320e2864-9149-4a73-bf38-1b2120ce3ce2" />
 
 ### 📊 Veja sua saúde financeira de relance
 O dashboard concentra tudo que importa: quanto você ganhou, quanto gastou, quanto sobrou e quanto poderia estar investindo. Com gráficos e cards que mostram a situação real do seu mês em segundos.
