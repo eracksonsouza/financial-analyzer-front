@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { postAnalysis } from '../../services/api'
-import type { AnalysisResponse, Expenses } from '../../services/api'
+import type { AnalysisCreateResponseDTO, ExpensesDTO } from '../../services/api'
+import { getErrorMessage } from '../../services/http'
 
-const CATEGORIES: { key: keyof Expenses; label: string; icon: string }[] = [
+const CATEGORIES: { key: keyof ExpensesDTO; label: string; icon: string }[] = [
   { key: 'moradia',     label: 'moradia',     icon: '🏠' },
   { key: 'alimentacao', label: 'alimentação', icon: '🛒' },
   { key: 'transporte',  label: 'transporte',  icon: '🚗' },
@@ -13,40 +14,56 @@ const CATEGORIES: { key: keyof Expenses; label: string; icon: string }[] = [
   { key: 'outros',      label: 'outros',      icon: '📦' },
 ]
 
-const emptyExpenses = (): Expenses => ({
+const emptyExpenses = (): ExpensesDTO => ({
   moradia: 0, alimentacao: 0, transporte: 0, saude: 0,
   lazer: 0, educacao: 0, dividas: 0, outros: 0,
 })
 
 interface Props {
-  onResult: (res: AnalysisResponse) => void
+  onResult: (res: AnalysisCreateResponseDTO) => void
 }
 
 export function AnalysisForm({ onResult }: Props) {
   const [income, setIncome] = useState('')
-  const [expenses, setExpenses] = useState<Expenses>(emptyExpenses())
+  const [expenses, setExpenses] = useState<ExpensesDTO>(emptyExpenses())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<'income' | keyof ExpensesDTO, string>>>({})
+
+  function validate(inc: number, exp: ExpensesDTO) {
+    const next: Partial<Record<'income' | keyof ExpensesDTO, string>> = {}
+    if (!inc || inc <= 0) next.income = 'Informe uma renda válida.'
+
+    for (const { key } of CATEGORIES) {
+      const value = exp[key]
+      if (!Number.isFinite(value)) next[key] = 'Valor inválido.'
+      else if (value < 0) next[key] = 'Não pode ser negativo.'
+    }
+
+    setFieldErrors(next)
+    return Object.keys(next).length === 0
+  }
 
   async function handleSubmit() {
     const inc = parseFloat(income)
-    if (!inc || inc <= 0) { setError('Informe uma renda válida.'); return }
+    setError('')
+    if (!validate(inc, expenses)) return
 
     setLoading(true)
-    setError('')
 
     try {
       const result = await postAnalysis(inc, expenses)
       onResult(result)
-    } catch (e: any) {
-      setError(e.message || 'Erro ao analisar. Tente novamente.')
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, 'Erro ao analisar. Tente novamente.'))
     } finally {
       setLoading(false)
     }
   }
 
-  function setExp(key: keyof Expenses, val: string) {
+  function setExp(key: keyof ExpensesDTO, val: string) {
     setExpenses(prev => ({ ...prev, [key]: parseFloat(val) || 0 }))
+    setFieldErrors((prev) => ({ ...prev, [key]: undefined }))
   }
 
   return (
@@ -63,6 +80,7 @@ export function AnalysisForm({ onResult }: Props) {
             onChange={e => setIncome(e.target.value)}
           />
         </div>
+        {fieldErrors.income && <p className="error-msg">{fieldErrors.income}</p>}
       </div>
 
       <div className="form-section">
@@ -80,6 +98,7 @@ export function AnalysisForm({ onResult }: Props) {
                 value={expenses[key] || ''}
                 onChange={e => setExp(key, e.target.value)}
               />
+              {fieldErrors[key] && <p className="error-msg">{fieldErrors[key]}</p>}
             </div>
           ))}
         </div>

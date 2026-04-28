@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { BadgeDollarSign, PiggyBank, TrendingDown, Wallet } from 'lucide-react'
-import type { HistoryItem, Metrics } from '../../services/api'
+import type { HistoryItemDTO, MetricsDTO } from '../../services/api'
 import type { TransactionEntry } from './AddTransactionModal'
 import { AddTransactionModal } from './AddTransactionModal'
 import { DonutChart } from '../charts/DonutChart'
 import './Dashboard.css'
 
 interface Props {
-  history: HistoryItem[]
+  history: HistoryItemDTO[]
 }
 
 function fmt(value: number) {
@@ -21,7 +21,7 @@ export function Dashboard({ history }: Props) {
   )
   const latest = sorted[0]
 
-  const metrics: Metrics = latest?.metrics ?? {
+  const metrics: MetricsDTO = latest?.metrics ?? {
     income: 0,
     total_expenses: 0,
     balance: 0,

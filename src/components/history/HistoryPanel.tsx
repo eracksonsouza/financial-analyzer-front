@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
 import { getHistory, getAnalysis } from '../../services/api'
-import type { HistoryItem, AnalysisResponse } from '../../services/api'
+import type { HistoryItemDTO, AnalysisResponse } from '../../services/api'
+import { getErrorMessage } from '../../services/http'
 
 interface Props {
   onSelect: (res: AnalysisResponse) => void
 }
 
 export function HistoryPanel({ onSelect }: Props) {
-  const [items, setItems] = useState<HistoryItem[]>([])
+  const [items, setItems] = useState<HistoryItemDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     getHistory()
       .then(setItems)
-      .catch(() => setError('Erro ao carregar histórico.'))
+      .catch((e: unknown) => setError(getErrorMessage(e, 'Erro ao carregar histórico.')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -22,8 +23,8 @@ export function HistoryPanel({ onSelect }: Props) {
     try {
       const full = await getAnalysis(id)
       onSelect(full)
-    } catch {
-      setError('Erro ao carregar análise.')
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, 'Erro ao carregar análise.'))
     }
   }
 

@@ -5,9 +5,11 @@ import { AnalysisResult } from './components/analysis/AnalysisResult'
 import { HistoryPanel } from './components/history/HistoryPanel'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { MonthSelect } from './components/controls/MonthSelect'
-import type { AnalysisResponse, HistoryItem } from './services/api'
+import type { AnalysisResponse, HistoryItemDTO } from './services/api'
 import { getHistory } from './services/api'
 import { getUserProfile } from './services/auth'
+import { getErrorMessage } from './services/http'
+import { useAsync } from './lib/useAsync'
 import logoAnalyzer from './assets/logo-analyzer.png'
 import categoryIcon from './assets/category.png'
 import chartIcon from './assets/chart.png'
@@ -18,35 +20,25 @@ type View = 'dashboard' | 'analysis' | 'result' | 'history'
 export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [result, setResult] = useState<AnalysisResponse | null>(null)
-  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([])
-  const [historyError, setHistoryError] = useState('')
   const [selectedMonth, setSelectedMonth] = useState(getMonthKey(new Date()))
 
   const user = useMemo(() => getUserProfile(), [])
 
+  const {
+    data: historyItems,
+    error: historyError,
+    loading: historyLoading,
+  } = useAsync(getHistory, [])
+
   useEffect(() => {
-    let mounted = true
-
-    getHistory()
-      .then((items) => {
-        if (!mounted) return
-        setHistoryItems(items)
-        const latest = getLatestMonthKey(items)
-        if (latest) setSelectedMonth(latest)
-      })
-      .catch(() => {
-        if (!mounted) return
-        setHistoryError('Não foi possível carregar os dados do dashboard.')
-      })
-
-    return () => {
-      mounted = false
-    }
-  }, [])
+    if (!historyItems || historyItems.length === 0) return
+    const latest = getLatestMonthKey(historyItems)
+    if (latest) setSelectedMonth(latest)
+  }, [historyItems])
 
   const monthOptions = useMemo(() => {
     const months = new Map<string, string>()
-    historyItems.forEach((item) => {
+    ;(historyItems ?? []).forEach((item) => {
       const date = new Date(item.created_at)
       const key = getMonthKey(date)
       months.set(key, formatMonthLabel(date))
@@ -69,7 +61,7 @@ export default function App() {
   }, [monthOptions, selectedMonth])
 
   const filteredHistory = useMemo(
-    () => historyItems.filter((item) => getMonthKey(new Date(item.created_at)) === selectedMonth),
+    () => (historyItems ?? []).filter((item) => getMonthKey(new Date(item.created_at)) === selectedMonth),
     [historyItems, selectedMonth]
   )
 
@@ -138,10 +130,21 @@ export default function App() {
           </div>
         </header>
 
-        {historyError && <p className="dashboard-error">{historyError}</p>}
+        {historyError ? (
+          <p className="dashboard-error">
+            {getErrorMessage(historyError, 'Não foi possível carregar os dados do dashboard.')}
+          </p>
+        ) : null}
 
         {view === 'dashboard' && (
-          <Dashboard history={filteredHistory} />
+          historyLoading ? (
+            <div className="loading">
+              <div className="spinner" />
+              carregando dashboard...
+            </div>
+          ) : (
+            <Dashboard history={filteredHistory} />
+          )
         )}
         {view === 'analysis' && <AnalysisForm onResult={handleResult} />}
         {view === 'result' && result && (
@@ -167,7 +170,7 @@ function formatMonthLabel(date: Date) {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-function getLatestMonthKey(items: HistoryItem[]) {
+function getLatestMonthKey(items: HistoryItemDTO[]) {
   const sorted = [...items].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
