@@ -117,11 +117,11 @@ export function Dashboard({ history }: Props) {
               <div className="panel-title">Transações</div>
               <div className="panel-subtitle">Últimos lançamentos do mês</div>
             </div>
-            <button className="panel-action" onClick={() => setIsAddOpen(true)}>+ adicionar</button>
+            <button className="panel-action" onClick={() => setIsAddOpen(true)}>+ Adicionar</button>
           </div>
 
           <div className="panel-table">
-            <div className="panel-row panel-row--head">
+            <div className="flex justify-between">
               <span>Título</span>
               <span>Data</span>
               <span>Quantidade</span>

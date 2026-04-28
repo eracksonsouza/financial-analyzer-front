@@ -5,6 +5,7 @@ import { AnalysisResult } from './components/analysis/AnalysisResult'
 import { HistoryPanel } from './components/history/HistoryPanel'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { MonthSelect } from './components/controls/MonthSelect'
+import { FinanceChatbot } from './components/FinanceChatbot'
 import type { AnalysisResponse, HistoryItemDTO } from './services/api'
 import { getHistory } from './services/api'
 import { getUserProfile } from './services/auth'
@@ -37,22 +38,12 @@ export default function App() {
   }, [historyItems])
 
   const monthOptions = useMemo(() => {
-    const months = new Map<string, string>()
-    ;(historyItems ?? []).forEach((item) => {
-      const date = new Date(item.created_at)
-      const key = getMonthKey(date)
-      months.set(key, formatMonthLabel(date))
-    })
-
-    if (months.size === 0) {
-      const current = new Date()
-      months.set(getMonthKey(current), formatMonthLabel(current))
-    }
-
-    return Array.from(months.entries())
-      .sort(([a], [b]) => (a > b ? -1 : 1))
-      .map(([key, label]) => ({ key, label }))
-  }, [historyItems])
+    const year = new Date().getFullYear()
+    return Array.from({ length: 12 }, (_, m) => {
+      const date = new Date(year, m, 1)
+      return { key: getMonthKey(date), label: formatMonthLabel(date) }
+    }).sort((a, b) => (a.key > b.key ? -1 : 1))
+  }, [])
 
   useEffect(() => {
     if (!monthOptions.find((opt) => opt.key === selectedMonth) && monthOptions.length > 0) {
@@ -157,6 +148,8 @@ export default function App() {
           <HistoryPanel onSelect={(res) => handleResult(res)} />
         )}
       </main>
+
+      <FinanceChatbot />
     </div>
   )
 }
